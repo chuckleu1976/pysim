@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libpcsclite-dev \
+            swig
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+            pyscard \
+            pyserial \
+            pytlv \
+            "cmd2>=1.5.0,<3.0" \
+            jsonpath-ng \
+            "construct>=2.10.70" \
+            bidict \
+            "pyosmocom>=0.0.12" \
+            "pyyaml>=5.4" \
+            termcolor \
+            colorlog \
+            pycryptodomex \
+            cryptography \
+            packaging \
+            "smpp.pdu @ git+https://github.com/hologram-io/smpp.pdu" \
+            "asn1tools @ git+https://github.com/osmocom/asn1tools" \
+            pytest
+
+      - name: Run unit tests
+        run: |
+          python -m pytest tests/unittests/ -v
